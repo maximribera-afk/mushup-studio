@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mashup Studio</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;800&display=swap">
+<style>
+:root{--bg:#fff4e6;--panel:#ffffff;--ink:#2a0f2e;--mut:#7a5a7e;--a:#e8325a;--b:#f59e0b;--line:#2a0f2e;--wave:#2a0f2e;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1d0a22;--panel:#2b1131;--ink:#fff1de;--mut:#c9a4c7;--a:#ff5c82;--b:#ffb83d;--line:#fff1de;--wave:#fff1de}}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Bricolage Grotesque",system-ui,sans-serif;line-height:1.45}
+main{max-width:980px;margin:0 auto;padding:24px 16px 56px}
+h1{font-size:clamp(2.2rem,8vw,4.4rem);line-height:.95;margin:8px 0 6px;font-weight:800;letter-spacing:-.03em}
+h1 span{background:linear-gradient(90deg,var(--a),var(--b));-webkit-background-clip:text;background-clip:text;color:transparent}
+.sub{color:var(--mut);max-width:52ch;margin:0 0 24px}
+.decks{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:700px){.decks{grid-template-columns:1fr}}
+.deck{background:var(--panel);border:2px solid var(--line);border-radius:18px;padding:16px;box-shadow:6px 6px 0 var(--c)}
+.deck.A{--c:var(--a)}.deck.B{--c:var(--b)}
+.deck h2{margin:0 0 10px;font-size:1.1rem}
+.drop{display:block;border:2px dashed var(--mut);border-radius:12px;padding:14px;text-align:center;cursor:pointer;color:var(--mut)}
+.drop:hover,.drop:focus-within{border-color:var(--c);color:var(--ink)}
+.drop input{position:absolute;opacity:0;width:1px;height:1px}
+canvas{width:100%;height:64px;display:block;margin:10px 0;border-radius:8px;background:color-mix(in srgb,var(--c) 14%,transparent)}
+.row{display:flex;align-items:center;gap:10px;margin:8px 0;flex-wrap:wrap}
+label{font-size:.9rem;color:var(--mut)}
+input[type=number]{width:84px;padding:6px 8px;border:2px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);font:inherit}
+input[type=range]{flex:1;min-width:120px;accent-color:var(--a)}
+.deck.B input[type=range]{accent-color:var(--b)}
+.mix{margin-top:20px;background:var(--panel);border:2px solid var(--line);border-radius:18px;padding:16px}
+.mix h2{margin:0 0 8px;font-size:1.1rem}
+select{padding:6px 8px;border:2px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);font:inherit}
+.btns{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
+button{font:inherit;font-weight:800;padding:12px 20px;border-radius:999px;border:2px solid var(--line);background:var(--bg);color:var(--ink);cursor:pointer}
+button.main{background:linear-gradient(90deg,var(--a),var(--b));color:#2a0f2e;border-color:var(--line)}
+button:disabled{opacity:.45;cursor:not-allowed}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--b);outline-offset:2px}
+#msg{margin-top:14px;color:var(--mut);min-height:1.4em}
+.note{margin-top:24px;font-size:.88rem;color:var(--mut);max-width:70ch}
+</style>
+</head>
+<body>
+<main>
+<h1>Mashup <span>Studio</span></h1>
+<p class="sub">Carga dos canciones, la web detecta el tempo, las sincroniza y crea el mashup. Todo ocurre en tu navegador: tus archivos no se suben a ningún sitio.</p>
+
+<section class="decks">
+  <div class="deck A">
+    <h2>Canción A (base)</h2>
+    <label class="drop"><input type="file" id="fA" accept="audio/*"><span id="nA">Elegir archivo de audio</span></label>
+    <canvas id="cA" width="600" height="64"></canvas>
+    <div class="row"><label for="bA">BPM</label><input type="number" id="bA" min="40" max="220" step="0.1" value="100"></div>
+    <div class="row"><label for="vA">Volumen</label><input type="range" id="vA" min="0" max="1" step="0.01" value="0.9"></div>
+    <div class="row"><button id="sepA" disabled>Separar voz con IA</button><label for="uA">Usar</label><select id="uA"><option value="full">Canción completa</option></select></div>
+  </div>
+  <div class="deck B">
+    <h2>Canción B</h2>
+    <label class="drop"><input type="file" id="fB" accept="audio/*"><span id="nB">Elegir archivo de audio</span></label>
+    <canvas id="cB" width="600" height="64"></canvas>
+    <div class="row"><label for="bB">BPM</label><input type="number" id="bB" min="40" max="220" step="0.1" value="100"></div>
+    <div class="row"><label for="vB">Volumen</label><input type="range" id="vB" min="0" max="1" step="0.01" value="0.9"></div>
+    <div class="row"><button id="sepB" disabled>Separar voz con IA</button><label for="uB">Usar</label><select id="uB"><option value="full">Canción completa</option></select></div>
+  </div>
+</section>
+
+<section class="mix">
+  <h2>Mezcla</h2>
+  <div class="row"><label for="mode">Tipo</label>
+    <select id="mode"><option value="over">Superposición (suenan a la vez)</option><option value="fade">Transición (A pasa a B)</option></select></div>
+  <div class="row"><label for="sync">Sincronizar B con el tempo de A</label><input type="checkbox" id="sync" checked></div>
+  <div class="row" id="rowT"><label for="tT">B entra en el segundo</label><input type="number" id="tT" min="0" step="1" value="30"><label for="tF">Duración del cruce (s)</label><input type="number" id="tF" min="1" step="1" value="8"></div>
+  <div class="btns">
+    <button class="main" id="auto" disabled>Mezclar automáticamente</button>
+    <button id="vox" disabled>Voz de A sobre instrumental de B</button>
+    <button id="play" disabled>Escuchar</button>
+    <button id="stop" disabled>Parar</button>
+    <button id="exp" disabled>Descargar WAV</button>
+  </div>
+  <div id="msg" role="status">Carga las dos canciones para empezar.</div>
+</section>
+
+<p class="note">Al sincronizar, B cambia de velocidad y por tanto también de tono; funciona mejor con canciones de tempo parecido. La separación usa Demucs en un servidor externo y tarda 1 o 2 minutos por canción (máximo 4 MB por archivo). Usa solo música de la que tengas derechos o licencia.</p>
+</main>
+
+<script>
+const $=id=>document.getElementById(id);
+const AC=window.AudioContext||window.webkitAudioContext;
+let ctx=null, buf={A:null,B:null}, live=null, files={}, stems={A:null,B:null};
+const ac=()=>ctx||(ctx=new AC());
+
+function detectBPM(b){
+  const sr=b.sampleRate, n=Math.min(b.length,sr*90), hop=512;
+  const ch=b.getChannelData(0), env=[];
+  for(let i=0;i+hop<n;i+=hop){let s=0;for(let j=0;j<hop;j++){const v=ch[i+j];s+=v*v}env.push(Math.sqrt(s/hop))}
+  const d=env.map((v,i)=>i?Math.max(0,v-env[i-1]):0);
+  const fps=sr/hop; let best=0,bl=0;
+  for(let bpm=70;bpm<=180;bpm+=0.5){
+    const lag=Math.round(fps*60/bpm); let s=0;
+    for(let i=lag;i<d.length;i++)s+=d[i]*d[i-lag];
+    s/=Math.pow(bpm/120,0.15); if(s>best){best=s;bl=bpm}
+  }
+  return Math.round(bl*10)/10;
+}
+
+function draw(k){
+  const c=$('c'+k),g=c.getContext('2d'),d=buf[k].getChannelData(0),w=c.width,h=c.height,step=Math.floor(d.length/w);
+  g.clearRect(0,0,w,h);g.fillStyle=getComputedStyle(document.body).getPropertyValue('--wave')||'#000'; g.fillStyle=getComputedStyle(document.documentElement).getPropertyValue('--wave');
+  for(let x=0;x<w;x++){let m=0;for(let j=0;j<step;j+=64){const v=Math.abs(d[x*step+j]||0);if(v>m)m=v}
+    const bh=Math.max(1,m*h*.95);g.fillRect(x,(h-bh)/2,1,bh)}
+}
+
+async function load(k,file){
+  if(!file)return;
+  $('msg').textContent='Analizando '+file.name+'…';
+  try{
+    buf[k]=await ac().decodeAudioData(await file.arrayBuffer());
+    files[k]=file; stems[k]=null; resetUse(k); $('n'+k).textContent=file.name; draw(k);
+    $('b'+k).value=detectBPM(buf[k]);
+    $('msg').textContent='Canción '+k+' cargada. BPM detectado: '+$('b'+k).value+' (puedes corregirlo).';
+  }catch(e){$('msg').textContent='No se pudo leer ese archivo. Prueba con MP3, WAV u OGG.';}
+  $('sep'+k).disabled=!buf[k]; const ok=buf.A&&buf.B; ['auto','play','exp'].forEach(i=>$(i).disabled=!ok);
+}
+$('fA').onchange=e=>load('A',e.target.files[0]);
+$('fB').onchange=e=>load('B',e.target.files[0]);
+$('mode').onchange=()=>$('rowT').style.display=$('mode').value==='fade'?'flex':'none';
+$('mode').onchange();
+
+function rate(){return $('sync').checked?Math.min(2,Math.max(.5,(+$('bA').value)/(+$('bB').value))):1}
+
+function build(c,dest){
+  const r=rate(),vA=+$('vA').value,vB=+$('vB').value,mode=$('mode').value;
+  const T=Math.max(0,+$('tT').value),F=Math.max(1,+$('tF').value);
+  const sA=c.createBufferSource(),sB=c.createBufferSource(),gA=c.createGain(),gB=c.createGain();
+  sA.buffer=use('A');sB.buffer=use('B');sB.playbackRate.value=r;
+  sA.connect(gA).connect(dest);sB.connect(gB).connect(dest);
+  const t0=c.currentTime+.05; let total;
+  gA.gain.value=vA;
+  if(mode==='over'){
+    gB.gain.value=vB; sA.start(t0); sB.start(t0);
+    total=Math.max(buf.A.duration,buf.B.duration/r);
+  }else{
+    const tin=Math.min(T,Math.max(0,buf.A.duration-1));
+    gA.gain.setValueAtTime(vA,t0+tin);gA.gain.linearRampToValueAtTime(0,t0+tin+F);
+    gB.gain.setValueAtTime(0,t0);gB.gain.setValueAtTime(0,t0+tin);gB.gain.linearRampToValueAtTime(vB,t0+tin+F);
+    sA.start(t0); sA.stop(t0+tin+F); sB.start(t0+tin);
+    total=tin+buf.B.duration/r;
+  }
+  return {srcs:[sA,sB],total};
+}
+
+$('auto').onclick=()=>{
+  $('sync').checked=true; $('mode').value=Math.abs($('bA').value-$('bB').value)/$('bA').value<.25?'over':'fade';
+  const dur=buf.A.duration; $('tT').value=Math.max(8,Math.round(dur*.6)); $('mode').onchange();
+  $('msg').textContent='Mezcla preparada ('+($('mode').value==='over'?'superposición':'transición')+', B ajustada al tempo de A). Pulsa Escuchar.';
+};
+
+function stop(){if(live){live.srcs.forEach(s=>{try{s.stop()}catch(e){}});live=null}$('stop').disabled=true}
+$('play').onclick=async()=>{
+  stop(); const c=ac(); if(c.state==='suspended')await c.resume();
+  live=build(c,c.destination); $('stop').disabled=false; $('msg').textContent='Reproduciendo…';
+  live.srcs[0].onended=()=>{if(live&&$('mode').value==='over')return};
+};
+$('stop').onclick=()=>{stop();$('msg').textContent='Parado.'};
+
+function wav(b){
+  const ch=b.numberOfChannels,len=b.length,out=new DataView(new ArrayBuffer(44+len*4));
+  const w=(o,s)=>[...s].forEach((x,i)=>out.setUint8(o+i,x.charCodeAt(0)));
+  w(0,'RIFF');out.setUint32(4,36+len*4,true);w(8,'WAVEfmt ');out.setUint32(16,16,true);out.setUint16(20,1,true);out.setUint16(22,2,true);
+  out.setUint32(24,b.sampleRate,true);out.setUint32(28,b.sampleRate*4,true);out.setUint16(32,4,true);out.setUint16(34,16,true);w(36,'data');out.setUint32(40,len*4,true);
+  const L=b.getChannelData(0),R=ch>1?b.getChannelData(1):L;let o=44;
+  for(let i=0;i<len;i++){for(const d of [L,R]){const v=Math.max(-1,Math.min(1,d[i]));out.setInt16(o,v<0?v*32768:v*32767,true);o+=2}}
+  return new Blob([out],{type:'audio/wav'});
+}
+$('exp').onclick=async()=>{
+  stop(); $('msg').textContent='Creando el archivo…'; $('exp').disabled=true;
+  try{
+    const sr=44100,r=rate(),mode=$('mode').value,T=+$('tT').value;
+    const secs=mode==='over'?Math.max(buf.A.duration,buf.B.duration/r):Math.min(T,buf.A.duration)+buf.B.duration/r;
+    const oc=new OfflineAudioContext(2,Math.ceil((secs+.2)*sr),sr);
+    build(oc,oc.destination);
+    const out=await oc.startRendering(),a=document.createElement('a');
+    a.href=URL.createObjectURL(wav(out));a.download='mashup.wav';a.click();
+    $('msg').textContent='Listo: mashup.wav descargado.';
+  }catch(e){$('msg').textContent='No se pudo exportar. Prueba con canciones más cortas.'}
+  $('exp').disabled=false;
+};
+
+const use=k=>{const v=$('u'+k).value;return v==='full'||!stems[k]?buf[k]:stems[k][v]};
+const resetUse=k=>{$('u'+k).innerHTML='<option value="full">Canción completa</option>';updVox()};
+const updVox=()=>{$('vox').disabled=!(stems.A&&stems.B)};
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const b64=f=>new Promise((ok,no)=>{const r=new FileReader();r.onload=()=>ok(r.result);r.onerror=no;r.readAsDataURL(f)});
+const dec=async u=>ac().decodeAudioData(await (await fetch(u)).arrayBuffer());
+async function sep(k){
+  const f=files[k]; if(!f)return;
+  if(f.size>4e6){$('msg').textContent='El archivo pesa más de 4 MB. Usa un MP3 más ligero.';return}
+  $('sep'+k).disabled=true; $('msg').textContent='Subiendo la canción '+k+'…';
+  try{
+    let r=await fetch('/api/separate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({audio:await b64(f)})});
+    let j=await r.json(); if(!r.ok)throw new Error(j.error||'Error al iniciar');
+    const id=j.id;
+    for(let t=0;;t++){
+      $('msg').textContent='Separando voz e instrumental de '+k+' con IA… ('+(t*3)+' s)';
+      await sleep(3000);
+      r=await fetch('/api/separate?id='+id); j=await r.json();
+      if(!r.ok||j.status==='failed'||j.status==='canceled')throw new Error(j.error||'La separación falló');
+      if(j.status==='succeeded')break;
+    }
+    $('msg').textContent='Descargando las pistas…';
+    stems[k]={vocals:await dec(j.stems.vocals),inst:await dec(j.stems.inst)};
+    $('u'+k).innerHTML='<option value="full">Canción completa</option><option value="vocals">Solo voz</option><option value="inst">Solo instrumental</option>';
+    updVox(); $('msg').textContent='Canción '+k+' separada. Elige qué pista usar en "Usar".';
+  }catch(e){$('msg').textContent='No se pudo separar: '+e.message+' (esta función solo va en la web publicada con el servidor).'}
+  $('sep'+k).disabled=false;
+}
+$('sepA').onclick=()=>sep('A'); $('sepB').onclick=()=>sep('B');
+$('vox').onclick=()=>{$('uA').value='vocals';$('uB').value='inst';$('mode').value='over';$('sync').checked=true;$('mode').onchange();$('msg').textContent='Listo: voz de A sobre el instrumental de B, al tempo de A. Pulsa Escuchar.'};
+</script>
+</body>
+</html>
